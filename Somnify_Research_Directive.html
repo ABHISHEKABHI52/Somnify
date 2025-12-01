@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Somnify R&D Directive: Rapid Sleep Induction</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind Config for Custom Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sleep-bg': '#FDFBF7', // Warm off-white
+                        'sleep-card': '#FFFFFF',
+                        'sleep-text': '#4A4744', // Dark warm grey
+                        'sleep-accent': '#9F8CB6', // Muted Lavender
+                        'sleep-gold': '#D6C098', // Soft Gold
+                        'sleep-green': '#A6B8A5', // Sage
+                        'sleep-dark': '#2D2A26'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FDFBF7; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D6C098; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9F8CB6; 
+        }
+
+        /* Chart Container Utilities */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px; /* Base height */
+            max-height: 400px;
+        }
+        
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        .active-tab {
+            border-bottom: 2px solid #9F8CB6;
+            color: #2D2A26;
+            font-weight: 600;
+        }
+        
+        .inactive-tab {
+            color: #888;
+            font-weight: 400;
+        }
+        
+        .topic-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .topic-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-max-width {
+            max-width: 500px;
+        }
+    </style>
+
+    <!-- Chosen Palette: Warm Neutrals (Cream, Soft Lavender, Sage, Warm Grey) -->
+    <!-- Application Structure Plan: 
+         1. Executive Dashboard: High-level metrics and the 'Target Trajectory' visualization to immediately ground the user in the 10-15 min goal.
+         2. Research Explorer: A functional grid allowing users to filter the 49 topics by domain. This handles the bulk of the text content without overwhelming the page.
+         3. System Architecture: An interactive 'Simulation' section where users can toggle modalities (Audio, Haptic, etc.) to see how they affect the 'Efficacy Radar'. This makes the technical specs engaging.
+         4. Roadmap & Business: A timeline and strategic view of the commercial and regulatory path. 
+         Rationale: The report is a roadmap. The app structure mimics a Project Management Dashboard, allowing the user to 'manage' the research.
+    -->
+    <!-- Visualization & Content Choices:
+         1. Line Chart (Target Trajectory): Shows brainwave freq over time. Goal: Compare rapid induction vs normal. Interaction: None/Static reference.
+         2. Radar Chart (System Simulation): Shows trade-offs (Power vs Comfort vs Efficacy). Goal: Visualize the complex decisions in the 'Hardware & Ergonomics' section. Interaction: Toggle modalities to update chart.
+         3. Doughnut Chart (Research Weight): Shows distribution of topics. Goal: Quick summary of resource allocation.
+         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. 
+    -->
+</head>
+<body class="bg-sleep-bg text-sleep-text font-sans antialiased selection:bg-sleep-accent selection:text-white pb-12">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">🌙</span>
+                    <h1 class="text-xl font-bold tracking-tight text-sleep-dark">Somnify <span class="font-normal text-gray-500 text-sm ml-2">| Research & Development Directive</span></h1>
+                </div>
+                <!-- Navigation -->
+                <nav class="hidden md:flex space-x-8">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="active-tab px-1 pt-1 text-sm font-medium transition-colors">Executive Summary</button>
+                    <button onclick="switchTab('research')" id="nav-research" class="inactive-tab px-1 pt-1 text-sm font-medium hover:text-sleep-dark transition-colors">Research Domains</button>
+                    <button onclick="switchTab('system')" id="nav-system" class="inactive-tab px-1 pt-1 text-sm font-medium hover:text-sleep-dark transition-colors">System Architecture</button>
+                    <button onclick="switchTab('business')" id="nav-business" class="inactive-tab px-1 pt-1 text-sm font-medium hover:text-sleep-dark transition-colors">Business & Roadmap</button>
+                </nav>
+                <!-- Mobile Menu Button (Simplified for this demo) -->
+                <button class="md:hidden text-gray-500" onclick="alert('Please view on a wider screen for full research data.')">
+                    <span class="text-xl">☰</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- VIEW 1: EXECUTIVE DASHBOARD -->
+        <div id="view-dashboard" class="space-y-8 animate-fade-in">
+            <!-- Intro Text -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-50">
+                <h2 class="text-2xl font-serif font-semibold text-sleep-dark mb-4">Project Mission: Accelerated Sleep Onset</h2>
+                <p class="text-lg leading-relaxed text-gray-600 mb-6">
+                    We are developing an advanced wearable device designed to induce sleep within <strong class="text-sleep-accent">10-15 minutes</strong>. 
+                    This directive outlines a comprehensive research strategy covering 49 critical topic areas across neuroscience, engineering, and clinical validation.
+                    The primary objective is to create a closed-loop, multimodal system that safely guides the user from wakefulness to Delta-wave sleep.
+                </p>
+                
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+                    <div class="bg-sleep-bg p-4 rounded-xl border border-sleep-gold/30">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Target Onset</div>
+                        <div class="text-3xl font-bold text-sleep-dark mt-1">10-15 <span class="text-sm font-normal text-gray-500">min</span></div>
+                        <div class="text-xs text-sleep-green mt-2">vs. 25-30m avg</div>
+                    </div>
+                    <div class="bg-sleep-bg p-4 rounded-xl border border-sleep-gold/30">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Research Topics</div>
+                        <div class="text-3xl font-bold text-sleep-dark mt-1">49</div>
+                        <div class="text-xs text-gray-500 mt-2">Across 9 Domains</div>
+                    </div>
+                    <div class="bg-sleep-bg p-4 rounded-xl border border-sleep-gold/30">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Key Modality</div>
+                        <div class="text-3xl font-bold text-sleep-dark mt-1">Multimodal</div>
+                        <div class="text-xs text-gray-500 mt-2">Audio + Tactile + Vagus</div>
+                    </div>
+                    <div class="bg-sleep-bg p-4 rounded-xl border border-sleep-gold/30">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Validation</div>
+                        <div class="text-3xl font-bold text-sleep-dark mt-1">Clinical</div>
+                        <div class="text-xs text-gray-500 mt-2">EEG & HRV Markers</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Trajectory Chart -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-50">
+                    <h3 class="text-lg font-semibold text-sleep-dark mb-2">Target Entrainment Trajectory</h3>
+                    <p class="text-sm text-gray-500 mb-6">Comparison of natural sleep onset vs. targeted induced onset via frequency following response.</p>
+                    <div class="chart-container">
+                        <canvas id="onsetChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Research Distribution -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-50">
+                    <h3 class="text-lg font-semibold text-sleep-dark mb-2">Research Effort Distribution</h3>
+                    <p class="text-sm text-gray-500 mb-6">Breakdown of the 49 research topics by primary discipline.</p>
+                    <div class="chart-container flex justify-center">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: RESEARCH EXPLORER -->
+        <div id="view-research" class="hidden space-y-8">
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-50">
+                <h2 class="text-2xl font-serif font-semibold text-sleep-dark mb-4">Research Domains</h2>
+                <p class="text-gray-600 mb-6">
+                    Explore the comprehensive breakdown of the 49 distinct research topics required for project success. 
+                    Filter by category to view specific requirements for Neuroscience, Engineering, or Clinical Validation.
+                </p>
+
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-2 mb-8" id="topic-filters">
+                    <button onclick="filterTopics('all')" class="bg-sleep-dark text-white px-4 py-2 rounded-full text-sm transition-colors hover:bg-gray-700">All Topics</button>
+                    <button onclick="filterTopics('Neurophysiological')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm transition-colors hover:bg-sleep-accent hover:text-white">Neurophysiology</button>
+                    <button onclick="filterTopics('Acoustic')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm transition-colors hover:bg-sleep-accent hover:text-white">Acoustic</button>
+                    <button onclick="filterTopics('Multimodal')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm transition-colors hover:bg-sleep-accent hover:text-white">Multimodal</button>
+                    <button onclick="filterTopics('Hardware')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm transition-colors hover:bg-sleep-accent hover:text-white">Hardware</button>
+                    <button onclick="filterTopics('Clinical')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm transition-colors hover:bg-sleep-accent hover:text-white">Clinical</button>
+                </div>
+
+                <!-- Topics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="topics-grid">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 3: SYSTEM ARCHITECTURE -->
+        <div id="view-system" class="hidden space-y-8">
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-50">
+                <h2 class="text-2xl font-serif font-semibold text-sleep-dark mb-4">System Architecture & Efficacy Simulation</h2>
+                <p class="text-gray-600 mb-6">
+                    The proposed device uses a multi-modal approach. This simulation allows you to combine different intervention strategies identified in the research 
+                    (Acoustic, Tactile, VNS) to estimate system performance against key constraints: Battery Life, Comfort, and Sleep Induction Power.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Controls -->
+                    <div class="space-y-6 lg:col-span-1">
+                        <h3 class="font-semibold text-gray-800 border-b pb-2">Active Modalities</h3>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <div class="font-medium text-sm">Binaural Acoustics</div>
+                                <div class="text-xs text-gray-500">0.5-4 Hz Delta range</div>
+                            </div>
+                            <input type="checkbox" id="mod-audio" checked onchange="updateSystemRadar()" class="w-5 h-5 text-sleep-accent rounded focus:ring-sleep-accent">
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <div class="font-medium text-sm">Haptic/Vibrotactile</div>
+                                <div class="text-xs text-gray-500">Rhythmic soothing patterns</div>
+                            </div>
+                            <label for="mod-haptic" class="sr-only">Enable Haptic/Vibrotactile</label>
+                            <input type="checkbox" id="mod-haptic" title="Enable Haptic/Vibrotactile" onchange="updateSystemRadar()" class="w-5 h-5 text-sleep-accent rounded focus:ring-sleep-accent">
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <div class="font-medium text-sm">Vagus Nerve Stim (taVNS)</div>
+                                <div class="text-xs text-gray-500">Electrical neuromodulation</div>
+                            </div>
+                            <label for="mod-vns" class="sr-only">Enable Vagus Nerve Stimulation</label>
+                            <input type="checkbox" id="mod-vns" title="Enable Vagus Nerve Stimulation" onchange="updateSystemRadar()" class="w-5 h-5 text-sleep-accent rounded focus:ring-sleep-accent">
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <div class="font-medium text-sm">Paced Breathing Light</div>
+                                <div class="text-xs text-gray-500">Red/Amber wavelength</div>
+                            </div>
+                            <label for="mod-light" class="sr-only">Enable Paced Breathing Light</label>
+                            <input type="checkbox" id="mod-light" title="Enable Paced Breathing Light" checked onchange="updateSystemRadar()" class="w-5 h-5 text-sleep-accent rounded focus:ring-sleep-accent">
+                        </div>
+                        
+                        <div class="mt-8 p-4 bg-sleep-bg border border-sleep-gold/50 rounded-lg">
+                            <h4 class="text-sm font-bold text-sleep-dark mb-2">Technical Constraint Note:</h4>
+                            <p class="text-xs text-gray-600">
+                                Combining all modalities maximizes efficacy but significantly impacts battery life and ergonomic comfort (Topic #40-45). 
+                                Research suggests an adaptive, phased approach is optimal.
+                            </p>
+                        </div>
+                        <div class="chart-container chart-max-width">
+
+                    <!-- Radar Chart -->
+                    <div class="lg:col-span-2 flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4">
+                        <div class="chart-container" style="max-width: 500px;">
+                            <canvas id="systemRadar"></canvas>
+                        </div>
+                        <div class="text-center mt-4">
+                            <p class="text-sm text-gray-500 italic" id="radar-caption">Current Configuration: Audio + Light</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hardware Specs Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-50">
+                     <h3 class="text-lg font-semibold text-sleep-dark mb-4">Hardware & Ergonomics</h3>
+                     <ul class="space-y-3">
+                         <li class="flex items-start">
+                             <span class="text-sleep-accent mr-2">●</span>
+                             <span class="text-sm text-gray-600"><strong>Form Factor:</strong> Ultra-slim headband or pillow-integrated sensors to minimize sleep disturbance (Topic #27).</span>
+                         </li>
+                         <li class="flex items-start">
+                             <span class="text-sleep-accent mr-2">●</span>
+                             <span class="text-sm text-gray-600"><strong>Sensors:</strong> Dry electrode EEG & PPG for real-time onset detection (Topic #29).</span>
+                         </li>
+                         <li class="flex items-start">
+                             <span class="text-sleep-accent mr-2">●</span>
+                             <span class="text-sm text-gray-600"><strong>Processing:</strong> Edge processing prioritized for latency minimization and privacy (Topic #41).</span>
+                         </li>
+                     </ul>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-50">
+                    <h3 class="text-lg font-semibold text-sleep-dark mb-4">Safety & Control</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-sleep-green mr-2">●</span>
+                            <span class="text-sm text-gray-600"><strong>Closed-Loop:</strong> AI adjusts intensity based on real-time EEG feedback (Topic #21).</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sleep-green mr-2">●</span>
+                            <span class="text-sm text-gray-600"><strong>Fail-safes:</strong> Hard limits on tACS/taVNS current output (Topic #26).</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sleep-green mr-2">●</span>
+                            <span class="text-sm text-gray-600"><strong>Habituation:</strong> Algorithms rotate stimuli patterns to prevent tolerance (Topic #23).</span>
+                        </li>
+                    </ul>
+               </div>
+            </div>
+        </div>
+
+        <!-- VIEW 4: BUSINESS & ROADMAP -->
+        <div id="view-business" class="hidden space-y-8">
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-50">
+                <h2 class="text-2xl font-serif font-semibold text-sleep-dark mb-6">Commercialization & Clinical Validation</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <!-- Regulatory -->
+                    <div>
+                        <h3 class="text-lg font-bold text-sleep-dark mb-4 flex items-center">
+                            <span class="bg-sleep-gold/20 text-sleep-dark p-1 rounded mr-2 text-sm">REGULATORY</span>
+                            Topic Areas #37-39
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Navigating the consumer wellness vs. medical device divide is critical. Research indicates two potential pathways:
+                        </p>
+                        <div class="space-y-4">
+                            <div class="p-4 border-l-4 border-sleep-green bg-gray-50">
+                                <h4 class="font-bold text-sm">Pathway A: Consumer Wellness</h4>
+                                <p class="text-xs text-gray-500 mt-1">Faster market entry. Claims limited to "relaxation" and "sleep support." Avoids rigorous FDA Class II requirements.</p>
+                            </div>
+                            <div class="p-4 border-l-4 border-sleep-accent bg-gray-50">
+                                <h4 class="font-bold text-sm">Pathway B: De Novo Medical Device</h4>
+                                <p class="text-xs text-gray-500 mt-1">Requires clinical trials proving "treatment of insomnia." Higher barrier to entry but enables insurance reimbursement claims.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Integration -->
+                    <div>
+                        <h3 class="text-lg font-bold text-sleep-dark mb-4 flex items-center">
+                            <span class="bg-sleep-gold/20 text-sleep-dark p-1 rounded mr-2 text-sm">BUSINESS</span>
+                            Topic Areas #46-49
+                        </h3>
+                        <ul class="space-y-4">
+                            <li class="bg-gray-50 p-3 rounded-lg">
+                                <div class="font-bold text-sm text-gray-800">Ecosystem Integration</div>
+                                <div class="text-xs text-gray-600">Must integrate with Apple Health/Google Fit. Smart home control (dimming lights, lowering thermostat) via API.</div>
+                            </li>
+                            <li class="bg-gray-50 p-3 rounded-lg">
+                                <div class="font-bold text-sm text-gray-800">Ethical AI</div>
+                                <div class="text-xs text-gray-600">Addressed concerns regarding behavioral manipulation. Explicit "Informed Consent" for neuro-stimulation required.</div>
+                            </li>
+                            <li class="bg-gray-50 p-3 rounded-lg">
+                                <div class="font-bold text-sm text-gray-800">Scalability</div>
+                                <div class="text-xs text-gray-600">BOM optimization focuses on off-the-shelf sensors vs. custom silicon.</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Phased Timeline -->
+                <div class="mt-12">
+                    <h3 class="text-lg font-bold text-sleep-dark mb-6 text-center">Development Roadmap</h3>
+                    <div class="relative">
+                        <div class="absolute left-0 top-1/2 w-full h-1 bg-gray-200 -z-10 transform -translate-y-1/2 hidden md:block"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="bg-white border-2 border-sleep-green p-4 rounded-lg text-center">
+                                <div class="text-xs font-bold text-sleep-green uppercase mb-1">Phase 1</div>
+                                <div class="font-bold text-sm mb-2">Proof of Concept</div>
+                                <p class="text-xs text-gray-500">Topics 1-16. Mechanism validation & prototype.</p>
+                            </div>
+                            <div class="bg-white border-2 border-gray-200 p-4 rounded-lg text-center opacity-75">
+                                <div class="text-xs font-bold text-gray-500 uppercase mb-1">Phase 2</div>
+                                <div class="font-bold text-sm mb-2">Clinical Pilot</div>
+                                <p class="text-xs text-gray-500">Topics 31-36. Small sample human testing.</p>
+                            </div>
+                            <div class="bg-white border-2 border-gray-200 p-4 rounded-lg text-center opacity-75">
+                                <div class="text-xs font-bold text-gray-500 uppercase mb-1">Phase 3</div>
+                                <div class="font-bold text-sm mb-2">Hardware Polish</div>
+                                <p class="text-xs text-gray-500">Topics 27-30. Ergonomics & miniaturization.</p>
+                            </div>
+                            <div class="bg-white border-2 border-gray-200 p-4 rounded-lg text-center opacity-75">
+                                <div class="text-xs font-bold text-gray-500 uppercase mb-1">Phase 4</div>
+                                <div class="font-bold text-sm mb-2">Launch</div>
+                                <p class="text-xs text-gray-500">Topics 37-49. Regs, Manufacturing & Marketing.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-200 text-center">
+        <p class="text-xs text-gray-500">
+            Generated from Comprehensive Research Prompt: "Rapid Sleep Induction Wearable Device Development". 
+            <br>Confidential Research Directive.
+        </p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA STORE ---
+        const researchTopics = [
+            // Neurophysiological
+            { id: 1, title: "Rapid Sleep Induction Mechanisms", cat: "Neurophysiological", desc: "Core mechanisms of transition from wakefulness to N1 sleep." },
+            { id: 2, title: "Parasympathetic Activation", cat: "Neurophysiological", desc: "Techniques to trigger 'Rest and Digest' response immediately." },
+            { id: 3, title: "Non-invasive Vagus Nerve Stim", cat: "Neurophysiological", desc: "tVNS protocols for auricular stimulation." },
+            { id: 4, title: "Controlled Breathing Protocols", cat: "Neurophysiological", desc: "Paced breathing patterns (e.g., 4-7-8) to lower heart rate." },
+            { id: 5, title: "Progressive Muscle Relaxation", cat: "Neurophysiological", desc: "Guided tension/release cycles for physical relaxation." },
+            // Acoustic
+            { id: 6, title: "Acoustic Parameters", cat: "Acoustic", desc: "Frequency, tempo, and amplitude optimization for sleep." },
+            { id: 7, title: "Binaural Beats & Isochronic", cat: "Acoustic", desc: "0.5-4 Hz Delta range targeting." },
+            { id: 8, title: "Pink/White Noise Optimization", cat: "Acoustic", desc: "Masking environmental noise and soothing neural activity." },
+            { id: 9, title: "Phase-locked Stimulation", cat: "Acoustic", desc: "Syncing audio pulses to slow-wave peaks." },
+            // Multimodal
+            { id: 10, title: "Tactile/Vibrotactile Patterns", cat: "Multimodal", desc: "Haptic feedback mimicking heartbeat or rocking." },
+            { id: 11, title: "Vestibular Stimulation", cat: "Multimodal", desc: "Gentle rocking sensation effects." },
+            { id: 12, title: "tACS Safety & Efficacy", cat: "Multimodal", desc: "Transcranial Alternating Current Stimulation parameters." },
+            { id: 13, title: "taVNS Integration", cat: "Multimodal", desc: "Combining VNS with other modes." },
+            { id: 14, title: "Olfactory Cues", cat: "Multimodal", desc: "Aromatherapy timing (Lavender/Chamomile)." },
+            { id: 15, title: "Temperature Modulation", cat: "Multimodal", desc: "Cooling effects to trigger sleep onset." },
+            { id: 16, title: "Light Modulation", cat: "Multimodal", desc: "Red/Amber fading protocols to boost melatonin." },
+            // Pharma/Bio
+            { id: 17, title: "Melatonin Protocols", cat: "Bio", desc: "Supplementation timing and dosing." },
+            { id: 18, title: "Neurofeedback", cat: "Bio", desc: "User-guided brainwave modulation." },
+            // Detection
+            { id: 19, title: "Psychophysiological Markers", cat: "Detection", desc: "EEG, HR, Respiratory signatures of N1 sleep." },
+            { id: 20, title: "Real-time Algorithms", cat: "Detection", desc: "Accurate detection of sleep onset to stop stim." },
+            // Control
+            { id: 21, title: "Closed-loop Systems", cat: "Control", desc: "Adapting output based on real-time biometric data." },
+            { id: 22, title: "Personalized Profiles", cat: "Control", desc: "Chronotype-based customization." },
+            { id: 23, title: "Habituation Prevention", cat: "Control", desc: "Varying stimuli to prevent tolerance." },
+            { id: 24, title: "Sensor Fusion Strategies", cat: "Control", desc: "Combining data from multiple inputs." },
+            // Safety
+            { id: 25, title: "Latency Minimization", cat: "Safety", desc: "Ensuring immediate system response." },
+            { id: 26, title: "Safety Thresholds", cat: "Safety", desc: "Current limits and fail-safes for stimulation." },
+            // Hardware
+            { id: 27, title: "Ergonomics", cat: "Hardware", desc: "Comfort-first headband/pillow design." },
+            { id: 28, title: "Sensor Placement", cat: "Hardware", desc: "Minimal intrusion (Ear/Forehead)." },
+            { id: 29, title: "Dry Electrodes", cat: "Hardware", desc: "Comfort vs Signal Quality tradeoffs." },
+            { id: 30, title: "Artifact Rejection", cat: "Hardware", desc: "Filtering movement noise." },
+            // Clinical
+            { id: 31, title: "Pilot Study Protocols", cat: "Clinical", desc: "Small-sample human testing design." },
+            { id: 32, title: "Subjective vs Objective", cat: "Clinical", desc: "Comparing user logs to EEG data." },
+            { id: 33, title: "Psychological Priming", cat: "Clinical", desc: "Placebo and routine effects." },
+            { id: 34, title: "CBT-I Integration", cat: "Clinical", desc: "Cognitive Behavioral Therapy for Insomnia." },
+            { id: 35, title: "Performance Assessment", cat: "Clinical", desc: "Next-day cognitive effects." },
+            { id: 36, title: "Long-term Effects", cat: "Clinical", desc: "Safety of repeated use." },
+            // Regulatory
+            { id: 37, title: "Regulatory Pathways", cat: "Regulatory", desc: "FDA/CE marking strategies." },
+            { id: 38, title: "Consent & Privacy", cat: "Regulatory", desc: "Data security and user permissions." },
+            { id: 39, title: "Accessibility", cat: "Regulatory", desc: "Inclusive design for disabilities." },
+            // Tech Arch
+            { id: 40, title: "Power Management", cat: "Tech", desc: "Battery life for overnight use." },
+            { id: 41, title: "Edge vs Cloud", cat: "Tech", desc: "Data processing location tradeoffs." },
+            { id: 42, title: "Firmware Optimization", cat: "Tech", desc: "Boot time and latency." },
+            { id: 43, title: "Multi-night Learning", cat: "Tech", desc: "Model updates based on history." },
+            { id: 44, title: "Failure Modes", cat: "Tech", desc: "Recovery from wake-ups/signal loss." },
+            { id: 45, title: "A/B Testing Framework", cat: "Tech", desc: "Optimizing parameters." },
+            // Business
+            { id: 46, title: "Ethical Considerations", cat: "Business", desc: "Behavioral manipulation concerns." },
+            { id: 47, title: "Market Positioning", cat: "Business", desc: "Target segments." },
+            { id: 48, title: "Ecosystem Integration", cat: "Business", desc: "Smart home/Phone APIs." },
+            { id: 49, title: "BOM Optimization", cat: "Business", desc: "Cost of Goods Sold analysis." }
+        ];
+
+        // --- NAVIGATION LOGIC ---
+        function switchTab(tabName) {
+            // Hide all views
+            ['dashboard', 'research', 'system', 'business'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`nav-${t}`);
+                btn.classList.remove('active-tab', 'text-sleep-dark');
+                btn.classList.add('inactive-tab');
+            });
+
+            // Show selected view
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            activeBtn.classList.remove('inactive-tab');
+            activeBtn.classList.add('active-tab', 'text-sleep-dark');
+
+            // Trigger chart resize if needed
+            if(tabName === 'dashboard' && window.onsetChartInstance) {
+                window.onsetChartInstance.resize();
+                window.distributionChartInstance.resize();
+            }
+            if(tabName === 'system' && window.systemRadarInstance) {
+                window.systemRadarInstance.resize();
+            }
+        }
+
+        // --- TOPIC GRID LOGIC ---
+        function renderTopics(filter) {
+            const grid = document.getElementById('topics-grid');
+            grid.innerHTML = '';
+            
+            const filtered = filter === 'all' 
+                ? researchTopics 
+                : researchTopics.filter(t => t.cat.includes(filter) || (filter === 'Hardware' && t.cat === 'Tech'));
+
+            filtered.forEach(topic => {
+                const card = document.createElement('div');
+                card.className = 'topic-card bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-sleep-accent hover:bg-white cursor-pointer';
+                card.onclick = () => alert(`Detail Drill-down for Topic #${topic.id}:\n${topic.title}\n\nObjective: ${topic.desc}`);
+                
+                // Color coding tags
+                let tagColor = "bg-gray-200 text-gray-700";
+                if(topic.cat === 'Neurophysiological') tagColor = "bg-indigo-100 text-indigo-700";
+                if(topic.cat === 'Acoustic') tagColor = "bg-blue-100 text-blue-700";
+                if(topic.cat === 'Multimodal') tagColor = "bg-purple-100 text-purple-700";
+                if(topic.cat === 'Hardware') tagColor = "bg-orange-100 text-orange-700";
+                if(topic.cat === 'Clinical') tagColor = "bg-teal-100 text-teal-700";
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-gray-400">#${topic.id}</span>
+                        <span class="text-[10px] uppercase font-bold px-2 py-1 rounded-full ${tagColor}">${topic.cat}</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-sleep-dark mb-1 leading-snug">${topic.title}</h4>
+                    <p class="text-xs text-gray-500 line-clamp-2">${topic.desc}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterTopics(cat) {
+            // Update filter button styles
+            const buttons = document.getElementById('topic-filters').children;
+            for(let btn of buttons) {
+                if(btn.innerText.includes(cat) || (cat === 'all' && btn.innerText === 'All Topics')) {
+                    btn.classList.remove('bg-gray-100', 'text-gray-600');
+                    btn.classList.add('bg-sleep-dark', 'text-white');
+                } else {
+                    btn.classList.add('bg-gray-100', 'text-gray-600');
+                    btn.classList.remove('bg-sleep-dark', 'text-white');
+                }
+            }
+            renderTopics(cat);
+        }
+
+        // --- CHARTS INITIALIZATION ---
+        window.addEventListener('load', () => {
+            renderTopics('all');
+
+            // 1. ONSET TRAJECTORY (LINE)
+            const ctxOnset = document.getElementById('onsetChart').getContext('2d');
+            window.onsetChartInstance = new Chart(ctxOnset, {
+                type: 'line',
+                data: {
+                    labels: ['0m', '5m', '10m', '15m', '20m', '25m', '30m'],
+                    datasets: [
+                        {
+                            label: 'Target Rapid Induction',
+                            data: [18, 14, 8, 3, 2, 1, 0.5], // Hz (Beta -> Alpha -> Theta -> Delta)
+                            borderColor: '#9F8CB6', // Lavender
+                            backgroundColor: 'rgba(159, 140, 182, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Average Natural Onset',
+                            data: [18, 17, 16, 15, 12, 8, 4], 
+                            borderColor: '#A6B8A5', // Sage
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Brainwave Frequency (Hz)' },
+                            min: 0,
+                            max: 20
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' Hz';
+                                        if(context.parsed.y < 4) label += ' (Delta)';
+                                        else if(context.parsed.y < 8) label += ' (Theta)';
+                                        else if(context.parsed.y < 12) label += ' (Alpha)';
+                                        else label += ' (Beta)';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. RESEARCH DISTRIBUTION (DOUGHNUT)
+            const ctxDist = document.getElementById('distributionChart').getContext('2d');
+            window.distributionChartInstance = new Chart(ctxDist, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Neuro & Bio', 'Hardware & Tech', 'Clinical & Safety', 'Multimodal & Acoustic', 'Business & Regs'],
+                    datasets: [{
+                        data: [7, 10, 8, 11, 13], // Count of topics roughly
+                        backgroundColor: [
+                            '#9F8CB6', // Lavender
+                            '#D6C098', // Gold
+                            '#A6B8A5', // Sage
+                            '#4A4744', // Dark
+                            '#E5E7EB'  // Gray
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // 3. SYSTEM RADAR CHART
+            initRadar();
+        });
+
+        // --- RADAR LOGIC ---
+        function initRadar() {
+            const ctxRadar = document.getElementById('systemRadar').getContext('2d');
+            window.systemRadarInstance = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Sleep Induction Efficacy', 'Battery Life', 'User Comfort', 'Technical Simplicity', 'Safety Margin'],
+                    datasets: [{
+                        label: 'Projected Performance',
+                        data: [80, 70, 90, 80, 95], // Initial: Audio + Light
+                        backgroundColor: 'rgba(214, 192, 152, 0.4)', // Gold transparent
+                        borderColor: '#D6C098',
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#D6C098',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: false },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false } // Hide numbers for cleaner look
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSystemRadar() {
+            const audio = document.getElementById('mod-audio').checked;
+            const haptic = document.getElementById('mod-haptic').checked;
+            const vns = document.getElementById('mod-vns').checked;
+            const light = document.getElementById('mod-light').checked;
+
+            let efficacy = 40; // Base
+            let battery = 100;
+            let comfort = 100;
+            let simplicity = 100;
+            let safety = 100;
+
+            let caption = "Base Configuration";
+
+            if (audio) {
+                efficacy += 20;
+                battery -= 5;
+                comfort -= 5; // Headphones
+                simplicity -= 10;
+            }
+            if (light) {
+                efficacy += 15;
+                battery -= 10;
+                simplicity -= 5;
+            }
+            if (haptic) {
+                efficacy += 25;
+                battery -= 30; // Motors use power
+                comfort -= 15; // Vibration on head
+                simplicity -= 20;
+            }
+            if (vns) {
+                efficacy += 30; // Strong effect
+                battery -= 15;
+                comfort -= 20; // Electrical sensation
+                safety -= 10; // Risk factor
+                simplicity -= 30; // Complex electrodes
+            }
+
+            // Clamp values
+            const clamp = (num) => Math.min(Math.max(num, 0), 100);
+
+            window.systemRadarInstance.data.datasets[0].data = [
+                clamp(efficacy), 
+                clamp(battery), 
+                clamp(comfort), 
+                clamp(simplicity), 
+                clamp(safety)
+            ];
+            window.systemRadarInstance.update();
+
+            // Update caption
+            const active = [];
+            if(audio) active.push("Audio");
+            if(haptic) active.push("Haptic");
+            if(vns) active.push("VNS");
+            if(light) active.push("Light");
+            document.getElementById('radar-caption').innerText = "Current Configuration: " + (active.length ? active.join(" + ") : "None");
+        }
+    </script>
+</body>
+</html>
