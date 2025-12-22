@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" width="200" alt="Somnify Logo">
+  <img src="https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/94935825/b2a75224-b108-466d-9650-711019046777/image.png" width="300" alt="Somnify Logo">
 </p>
 
 # Somnify: Rapid Sleep Induction System 🌙💤
